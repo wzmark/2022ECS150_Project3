@@ -7,11 +7,26 @@
 #include "disk.h"
 #include "fs.h"
 
-/* TODO: Phase 1 */
+typedef struct __attribute__((packed)){
+	int64_t Signature;
+	int16_t numOfBlocks;
+	int16_t indexOfRootDirectory;
+	int16_t indexOfStartBlock;
+	int16_t numOfDataBlock;
+	int8_t numOfFatBlock;
+	int8_t unused[4079];
+}Superblock;
+
+typedef struct __attribute__((packed)){
+	char *filename;
+	int32_t sizeOfFile;
+	int16_t indexOfFirstBlock;
+	int unused[10];
+}FatEntry;
 
 int fs_mount(const char *diskname)
 {
-	/* TODO: Phase 1 */
+	
 }
 
 int fs_umount(void)
