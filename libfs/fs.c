@@ -141,9 +141,11 @@ int fs_create(const char *filename)
 			return -1;
 		}
 	}
-	strcmp(filename, fs->RootDirectory[startIndexOfRootDirectory].filename);
+	strcpy(fs->RootDirectory[startIndexOfRootDirectory].filename, filename);
+	
 	fs->RootDirectory[startIndexOfRootDirectory].sizeOfFile = 0;
 	fs->RootDirectory[startIndexOfRootDirectory].indexOfFirstBlock = 65535;
+	fs->numOfUnusedRootDirectory -= 1;
 	return 0;
 
 }
@@ -166,7 +168,6 @@ int fs_delete(const char *filename)
 	FATBlock* currentFatBlock = (FATBlock*)malloc(sizeof(FATBlock));
 	currentFatBlock->fat = (uint16_t*)malloc(sizeof(uint16_t));
 	currentFatBlock = &fs->fatBlocks[currentBlock];
-	//strcpy(currentFatBlock->fat, fs->fatBlocks[currentBlock].fat);
 	while(*currentFatBlock->fat != 65535){
 		FATBlock* nextFatBlock = (FATBlock*)malloc(sizeof(FATBlock));
 		nextFatBlock->fat = (uint16_t*)malloc(sizeof(uint16_t));
@@ -227,5 +228,6 @@ int main(){
 	fs_mount("disk.fs");
 	fs_ls();
 	fs_delete("Makefile");
+	fs_create("test");
 	fs_ls();
 }
