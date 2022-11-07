@@ -130,19 +130,26 @@ int FileCheck(const char *filename){
 	return 0;
 }
 
+int FindFileLocation(const char *filename){
+	int startIndexOfRootDirectory = FS_FILE_MAX_COUNT - fs->numOfUnusedRootDirectory;
+	for(int i = 0; i < startIndexOfRootDirectory; i++){
+		if(strcmp(filename, fs->RootDirectory[i].filename) == 0){
+			return i;
+		}
+	}
+	return -1;
+}
+
 int fs_create(const char *filename)
 {
 	if(FileCheck((char*)filename) == -1){
 		return -1;
 	}
 	int startIndexOfRootDirectory = FS_FILE_MAX_COUNT - fs->numOfUnusedRootDirectory;
-	for(int i = 0; i < startIndexOfRootDirectory; i++){
-		if(strcmp(filename, fs->RootDirectory[i].filename) == 0){
-			return -1;
-		}
+	if(FindFileLocation(filename) != -1){
+		return -1;
 	}
 	strcpy(fs->RootDirectory[startIndexOfRootDirectory].filename, filename);
-	
 	fs->RootDirectory[startIndexOfRootDirectory].sizeOfFile = 0;
 	fs->RootDirectory[startIndexOfRootDirectory].indexOfFirstBlock = 65535;
 	fs->numOfUnusedRootDirectory -= 1;
@@ -155,11 +162,9 @@ int fs_delete(const char *filename)
 	if(FileCheck(filename) == -1){
 		return -1;
 	}
-	int indexOfRootDirectory = -1;
-	for(int i = 0; i < FS_FILE_MAX_COUNT - fs->numOfUnusedRootDirectory; i++){
-		if(strcmp(filename, fs->RootDirectory[i].filename) == 0){
-			indexOfRootDirectory = i;
-		}
+	int indexOfRootDirectory = FindFileLocation(filename);
+	if(indexOfRootDirectory == -1){
+		return -1;
 	}
 	fs->RootDirectory[indexOfRootDirectory].sizeOfFile = 0;
 	strcpy(fs->RootDirectory[indexOfRootDirectory].filename, "\0");
