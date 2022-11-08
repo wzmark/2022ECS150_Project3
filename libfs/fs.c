@@ -249,12 +249,28 @@ int fs_close(int fd)
 		return -1;
 	}
 	strcpy(fs->fdWithFileName[fd], "");
+	fs->numOfOpenFiles -= 1;
 	return 0;
 }
 
 int fs_stat(int fd)
 {
-	/* TODO: Phase 3 */
+	if(fs->isMounted == UNMOUNTED){
+		return -1;
+	}
+	if(fd > FS_OPEN_MAX_COUNT){
+		return -1;
+	}
+	if(strcmp(fs->fdWithFileName[fd], "") != -1){
+		return -1;
+	}
+	const char* filename;
+	strcpy(filename, fs->fdWithFileName[fd]);
+	int indexOfFile = FindFileLocation(filename);
+	if(indexOfFile == -1){
+		return -1;
+	}
+	return fs->RootDirectory[indexOfFile].sizeOfFile;
 }
 
 int fs_lseek(int fd, size_t offset)
