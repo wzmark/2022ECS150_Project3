@@ -41,8 +41,8 @@ typedef struct __attribute__((packed)){
 		RootDirectory *RootDirectory;
 		int numOfUnusedRootDirectory;
 		int isMounted;
-		
 		char* fdWithFileName[FS_OPEN_MAX_COUNT];
+		int fdWithOffset[FS_OPEN_MAX_COUNT];
 		int numOfOpenFiles;
 }FileSystem;
 
@@ -237,8 +237,7 @@ int fs_open(const char *filename)
 	return -1;
 }
 
-int fs_close(int fd)
-{
+int FdCheck(int fd){
 	if(fs->isMounted == UNMOUNTED){
 		return -1;
 	}
@@ -246,6 +245,14 @@ int fs_close(int fd)
 		return -1;
 	}
 	if(strcmp(fs->fdWithFileName[fd], "") != -1){
+		return -1;
+	}
+	return 0;
+}
+
+int fs_close(int fd)
+{
+	if(FdCheck(fd) == -1){
 		return -1;
 	}
 	strcpy(fs->fdWithFileName[fd], "");
@@ -255,13 +262,7 @@ int fs_close(int fd)
 
 int fs_stat(int fd)
 {
-	if(fs->isMounted == UNMOUNTED){
-		return -1;
-	}
-	if(fd > FS_OPEN_MAX_COUNT){
-		return -1;
-	}
-	if(strcmp(fs->fdWithFileName[fd], "") != -1){
+	if(FdCheck(fd) == -1){
 		return -1;
 	}
 	const char* filename;
@@ -275,7 +276,14 @@ int fs_stat(int fd)
 
 int fs_lseek(int fd, size_t offset)
 {
-	/* TODO: Phase 3 */
+	if(FdCheck(fd) == -1){
+		return -1;
+	}
+	if(fs_stat(fd) < offset){
+		return -1;
+	}
+	fs->fdWithOffset[fd] = offset;
+	return 0;
 }
 
 int fs_write(int fd, void *buf, size_t count)
