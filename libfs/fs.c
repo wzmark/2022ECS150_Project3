@@ -434,11 +434,4 @@ int main(){
 	fs_ls();
 	fs_delete("Makefile");
 	fs_ls();
-	
-	/*
-	fs_ls();
-	fs_delete("Makefile");
-	fs_create("test");
-	fs_ls();
-	*/
 }
