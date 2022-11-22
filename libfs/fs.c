@@ -556,6 +556,8 @@ int fs_write(int fd, void *buf, size_t count)
 			currentFat = &(fs->fatBlocks[*indexOfBlock].fat[*indexInBlock]);
 
 		}
+		free(bufferStoreLargeBlock);
+		free(partOfBuffer);
 		return actualSize;
 
 }
@@ -618,6 +620,9 @@ int fs_read(int fd, void *buf, size_t count)
 		uint64_t endOffset = offsetOfFile + actualSize;
 		//int endOffsetInBlock = endOffset % BLOCK_SIZE;
 		memcpy(buf, bufferStoreLargeBlock + startOffsetInBlock, actualSize);
+		free(bufferStoreLargeBlock);
+		free(partOfBuffer);
+
 		fs->fdWithOffset[fd] = endOffset;
 		return actualSize;
 }
@@ -647,11 +652,12 @@ int main(int argc, char *argv[])
 	fd = fs_open("sshell");
 	ASSERT(fd >= 0, "fs_open");
 
-	
+	fs_lseek(fd, 2);
 	ret = fs_write(fd, data, sizeof(data));
-	fs_lseek(fd, 0);
+	fs_lseek(fd, 9);
 	void* buffer = malloc(26);
 	fs_read(fd, buffer, 26);
+	printf("%d", sizeof(buffer));
 	ASSERT(ret == sizeof(data), "fs_write");
 
 	
