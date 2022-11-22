@@ -512,6 +512,7 @@ int fs_write(int fd, void *buf, size_t count)
 			currentFat = &(fs->fatBlocks[*indexOfBlock].fat[*indexInBlock]);
 
 		}
+		fs->RootDirectory[indexOfRootDirectory].sizeOfFile += actualSize;
 		free(bufferStoreLargeBlock);
 		free(partOfBuffer);
 		return actualSize;
