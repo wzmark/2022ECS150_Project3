@@ -523,6 +523,12 @@ int fs_read(int fd, void *buf, size_t count)
 		if(FdCheck(fd) == -1){
 				return -1;
 		}
+		if(count == 0){
+			return -1;
+		}
+		if(sizeof(buf) == 0){
+			return -1;
+		}
 		char filename[FS_FILENAME_LEN];
 		strcpy(filename, fs->fdWithFileName[fd]);
 		uint64_t offsetOfFile = fs->fdWithOffset[fd];
@@ -618,5 +624,6 @@ int main(int argc, char *argv[])
 	fs_umount();
 
 	return 0;
-	*/
+	
 }
+*/
