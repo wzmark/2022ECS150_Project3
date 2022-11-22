@@ -630,7 +630,6 @@ int main(){
 	fs_delete("test");
 	fs_ls();
 	
-<<<<<<< HEAD
 	int fd = fs_open("Makefile");
 	void* buffer = malloc(BLOCK_SIZE);
 	fs_lseek(fd, 2);
@@ -645,12 +644,3 @@ int main(){
 	fs_read(fd2, buffer, 10);
 	fs_ls();
 }
-=======
-	const char *filename = "Makefile";
-	int a = fs_open(filename);
-	int b = fs_open(filename);
-	printf("%d\n",a);
-	printf("%d\n",b);
-	fs_close(0);
-}
->>>>>>> c93da9f2f7bc2e625a650a6b8396c29492b45ef6
