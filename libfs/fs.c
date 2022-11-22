@@ -5,7 +5,7 @@
 #include <string.h>
 
 #include "disk.h"
-#include "disk.c"
+
 #include "fs.h"
 //#include "disk.c"
 #define FAT_EOC 0xFFFF
@@ -622,25 +622,3 @@ int fs_read(int fd, void *buf, size_t count)
 		return actualSize;
 }
 
-int main(){
-	fs_mount("disk.fs");
-	fs_info();
-	fs_create("test");
-	fs_ls();
-	fs_delete("test");
-	fs_ls();
-	
-	int fd = fs_open("Makefile");
-	void* buffer = malloc(BLOCK_SIZE);
-	fs_lseek(fd, 2);
-	fs_read(fd, buffer, 10);
-	fs_create("test");
-	int fd2 = fs_open("test");
-	fs_lseek(fd2, 0);
-	fs_write(fd2, buffer, 10);
-	fs_lseek(fd2, 0);
-	free(buffer);
-	buffer = malloc(BLOCK_SIZE);
-	fs_read(fd2, buffer, 10);
-	fs_ls();
-}
