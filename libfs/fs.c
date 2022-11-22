@@ -5,9 +5,9 @@
 #include <string.h>
 
 #include "disk.h"
-
-#include "fs.h"
 //#include "disk.c"
+#include "fs.h"
+#include "disk.c"
 #define FAT_EOC 0xFFFF
 #define FS_NUM_FAT_ENTRIES 2048
 #define SIGNATURE 6000536558536704837
@@ -512,7 +512,7 @@ int fs_write(int fd, void *buf, size_t count)
 						actualSize += BLOCK_SIZE;
 						remainSize -= BLOCK_SIZE;
 				}else{
-						memcpy(bufferStoreLargeBlock + BLOCK_SIZE * i, partOfBuffer, remainSize);
+						memcpy(bufferStoreLargeBlock + BLOCK_SIZE * i, partOfBuffer, BLOCK_SIZE);
 						actualSize += remainSize;
 						remainSize -= remainSize;
 				}
@@ -606,7 +606,7 @@ int fs_read(int fd, void *buf, size_t count)
 						actualSize += BLOCK_SIZE;
 						remainSize -= BLOCK_SIZE;
 				}else{
-						memcpy(bufferStoreLargeBlock + BLOCK_SIZE * i, partOfBuffer, remainSize);
+						memcpy(bufferStoreLargeBlock + BLOCK_SIZE * i, partOfBuffer, BLOCK_SIZE);
 						actualSize += remainSize;
 						remainSize -= remainSize;
 				}
@@ -622,3 +622,41 @@ int fs_read(int fd, void *buf, size_t count)
 		return actualSize;
 }
 
+#define ASSERT(cond, func)                               \
+do {                                                     \
+	if (!(cond)) {                                       \
+		fprintf(stderr, "Function '%s' failed\n", func); \
+		exit(EXIT_FAILURE);                              \
+	}                                                    \
+} while (0)
+
+int main(int argc, char *argv[])
+{
+	int ret;
+	char *diskname = "disk.fs";
+	int fd;
+	char data[26] = "abcdefghijklmnopqrstuvwxyz";
+
+	ret = fs_mount(diskname);
+	ASSERT(!ret, "fs_mount");
+
+	
+	//ret = fs_create("myfile");
+	//ASSERT(!ret, "fs_create");
+
+	fd = fs_open("sshell");
+	ASSERT(fd >= 0, "fs_open");
+
+	
+	ret = fs_write(fd, data, sizeof(data));
+	fs_lseek(fd, 0);
+	void* buffer = malloc(26);
+	fs_read(fd, buffer, 26);
+	ASSERT(ret == sizeof(data), "fs_write");
+
+	
+	fs_close(fd);
+	fs_umount();
+
+	return 0;
+}
