@@ -91,7 +91,7 @@ int fs_mount(const char *diskname)
 	fs->RootDirectory = (RootDirectory*)malloc(sizeof(RootDirectory) * FS_FILE_MAX_COUNT);
 	// read the root directory
 	block_read(fs->superBlock->indexOfRootDirectory, fs->RootDirectory);
-	printf("%s   %s", fs->RootDirectory[3].filename, fs->RootDirectory[1].filename);
+	// printf("%s   %s", fs->RootDirectory[3].filename, fs->RootDirectory[1].filename);
 	// check the number of unused root directory (# of unused file)
 	fs->numOfUnusedRootDirectory = FS_FILE_MAX_COUNT;
 	for(int i = 0; i < FS_FILE_MAX_COUNT; i++){
