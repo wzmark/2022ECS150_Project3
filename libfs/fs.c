@@ -217,7 +217,7 @@ int fs_create(const char *filename)
 		// initialization of new file
 		strcpy(fs->RootDirectory[startIndexOfRootDirectory].filename, filename);
 		fs->RootDirectory[startIndexOfRootDirectory].sizeOfFile = 0;
-		fs->RootDirectory[startIndexOfRootDirectory].indexOfFirstBlock = FAT_EOC;
+		fs->RootDirectory[startIndexOfRootDirectory].indexOfFirstBlock = 65535;
 		fs->numOfUnusedRootDirectory -= 1;
 		return 0;
 
