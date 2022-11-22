@@ -217,7 +217,7 @@ int fs_create(const char *filename)
 		// initialization of new file
 		strcpy(fs->RootDirectory[startIndexOfRootDirectory].filename, filename);
 		fs->RootDirectory[startIndexOfRootDirectory].sizeOfFile = 0;
-		fs->RootDirectory[startIndexOfRootDirectory].indexOfFirstBlock = 65535;
+		fs->RootDirectory[startIndexOfRootDirectory].indexOfFirstBlock = FAT_EOC;
 		fs->numOfUnusedRootDirectory -= 1;
 		return 0;
 
@@ -397,6 +397,12 @@ int fs_write(int fd, void *buf, size_t count)
 
 		if(FdCheck(fd) == -1){
 				return -1;
+		}
+		if(count == 0){
+			return -1;
+		}
+		if(sizeof(buf) == 0){
+			return -1;
 		}
 		char filename[FS_FILENAME_LEN];
 		strcpy(filename, fs->fdWithFileName[fd]);
@@ -587,7 +593,7 @@ do {                                                     \
 int main(int argc, char *argv[])
 {
 	int ret;
-	char *diskname = "disk.fs";
+	char *diskname = "test.fs";
 	int fd;
 	char data[26] = "abcdefghijklmnopqrstuvwxyz";
 
@@ -595,6 +601,7 @@ int main(int argc, char *argv[])
 	ASSERT(!ret, "fs_mount");
 	fs_create("test");
 	fs_ls();
+	
 	fd = fs_open("sshell");
 	ASSERT(fd >= 0, "fs_open");
 
@@ -611,4 +618,5 @@ int main(int argc, char *argv[])
 	fs_umount();
 
 	return 0;
-}*/
+	*/
+}
