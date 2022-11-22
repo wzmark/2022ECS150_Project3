@@ -7,7 +7,6 @@
 #include "disk.h"
 //#include "disk.c"
 #include "fs.h"
-#include "disk.c"
 #define FAT_EOC 0xFFFF
 #define FS_NUM_FAT_ENTRIES 2048
 #define SIGNATURE 6000536558536704837
@@ -458,7 +457,7 @@ int fs_write(int fd, void *buf, size_t count)
 			
 			memcpy(bufferStoreLargeBlock + startOffsetInBlock + i, buf + i, 1);
 			sizeOfDataInBlock += 1;
-			if(i == count - 1){
+			if((size_t)i == count - 1){
 				actualSizeInEachBlock[countOfBlock] = sizeOfDataInBlock;
 				countOfBlock += 1;
 				sizeOfDataInBlock = 0;
@@ -576,6 +575,7 @@ int fs_read(int fd, void *buf, size_t count)
 		return actualSize;
 }
 
+/*
 #define ASSERT(cond, func)                               \
 do {                                                     \
 	if (!(cond)) {                                       \
@@ -611,4 +611,4 @@ int main(int argc, char *argv[])
 	fs_umount();
 
 	return 0;
-}
+}*/
