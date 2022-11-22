@@ -46,7 +46,7 @@ typedef struct __attribute__((packed)){
 		int numOfUnusedRootDirectory;
 		int isMounted;
 		char* fdWithFileName[FS_OPEN_MAX_COUNT];
-		int fdWithOffset[FS_OPEN_MAX_COUNT];
+		uint64_t fdWithOffset[FS_OPEN_MAX_COUNT];
 		int numOfOpenFiles;
 }FileSystem;
 
@@ -401,6 +401,7 @@ int fs_write(int fd, void *buf, size_t count)
 		}
 		char filename[FS_FILENAME_LEN];
 		strcpy(filename, fs->fdWithFileName[fd]);
+		uint64_t offsetOfFile = fs->fdWithOffset[fd];
 		int indexOfUnusedFatBlock = FindUnusedFatLocation();
 		if(indexOfUnusedFatBlock == -1){
 				//no available fat
@@ -409,11 +410,22 @@ int fs_write(int fd, void *buf, size_t count)
 		const char *constFilename = filename;
 		int indexOfRootDirectory = FindFileLocation(constFilename);
 		int startOfFat = fs->RootDirectory[indexOfRootDirectory].indexOfFirstBlock;
-		if(startOfFat == FAT_EOC){
-				startOfFat = indexOfUnusedFatBlock;
-				fs->RootDirectory[indexOfRootDirectory].indexOfFirstBlock = indexOfUnusedFatBlock;
+		int startOffsetInBlock = 0;
+		
+		if(offsetOfFile != 0){
+			int fatOffsetPoint = int(offsetOfFile / BLOCK_SIZE);
+			startOFat = startOfFat + fatOffsetPoint;
+			startOffsetInBlock = startOfFat - (fatOffsetPoint * BLOCK_SIZE);
+		}else{
+			
+			if(startOfFat == FAT_EOC){
+					startOfFat = indexOfUnusedFatBlock;
+					fs->RootDirectory[indexOfRootDirectory].indexOfFirstBlock = indexOfUnusedFatBlock;
+			}
 		}
+		
 		void* partOfBuffer = malloc(BLOCK_SIZE);
+		void* partOfBufferFromBlock = malloc(BLOCK_SIZE);
 		int numOfWriteTimes = count / BLOCK_SIZE;
 			// warning:  error: comparison between signed and unsigned integer expressions
 			// orginal: if(count > BLOCK_SIZE * numOfWriteTimes){
@@ -427,6 +439,9 @@ int fs_write(int fd, void *buf, size_t count)
 		int actualSize = 0;
 		for(int i = 0; i < numOfWriteTimes; i++){
 			if(remainSize > BLOCK_SIZE){
+					if(startOffsetInBlock != 0){
+						block_read(fs->superBlock->indexOfStartBlock + indexOfFat , partOfBuffer);
+					}
 					memcpy(partOfBuffer, buf + BLOCK_SIZE * i, BLOCK_SIZE);
 					actualSize += BLOCK_SIZE;
 			}else{
@@ -444,6 +459,76 @@ int fs_write(int fd, void *buf, size_t count)
 		return actualSize;
 }
 
+int fs_write(int fd, void *buf, size_t count)
+{
+	if(FdCheck(fd) == -1){
+			return -1;
+	}
+	if(buf == NULL){
+			return -1;
+	}
+	char filename[FS_FILENAME_LEN];
+	strcpy(filename, fs->fdWithFileName[fd]);
+	uint64_t offsetOfFile = fs->fdWithOffset[fd];
+	int indexOfUnusedFatBlock = FindUnusedFatLocation();
+	const char *constFilename = filename;
+	int indexOfRootDirectory = FindFileLocation(constFilename);
+	int startOfFat = fs->RootDirectory[indexOfRootDirectory].indexOfFirstBlock;
+	int startOffsetInBlock = 0;
+	
+	if(offsetOfFile != 0){
+		int fatOffsetPoint = int(offsetOfFile / BLOCK_SIZE);
+		startOFat = startOfFat + fatOffsetPoint;
+		startOffsetInBlock = startOfFat - (fatOffsetPoint * BLOCK_SIZE);
+	}else{
+		
+		if(startOfFat == FAT_EOC){
+				startOfFat = indexOfUnusedFatBlock;
+				fs->RootDirectory[indexOfRootDirectory].indexOfFirstBlock = indexOfUnusedFatBlock;
+		}
+	}
+
+	int numOfBlockWrite = 0;
+	int remainSize = count;
+	int actualSize = 0;
+	
+	int* indexOfBlock = (int*)malloc(sizeof(int));
+	int* indexInBlock = (int*)malloc(sizeof(int));
+	FindFatNextLocation(startOfFat, indexOfBlock, indexInBlock);
+	uint16_t* currentFat = (uint16_t*)malloc(sizeof(uint16_t));
+	currentFat = &(fs->fatBlocks[*indexOfBlock].fat[*indexInBlock]);
+	uint16_t* nextFat = (uint16_t*)malloc(sizeof(uint16_t));
+	while(remainSize != 0 || ){
+		if(*currentFat == FAT_EOC){
+			indexOfUnusedFatBlock = FindUnusedFatLocation();
+			if(indexOfUnusedFatBlock == -1){
+				break;
+			}
+		}
+		FindFatNextLocation(*currentFat, indexOfBlock, indexInBlock);
+		nextFat = &(fs->fatBlocks[*indexOfBlock].fat[*indexInBlock]);
+		*currentFat = 0;
+		currentFat = nextFat;
+		if(remainSize > BLOCK_SIZE){
+				actualSize += BLOCK_SIZE;
+				remainSize -= BLOCK_SIZE;
+		}else{
+				actualSize += remainSize;
+				remainSize -= remainSize;
+		}
+		numOfBlockWrite += 1;
+
+	}
+	void* bufferStoreLargeBlock = malloc(BLOCK_SIZE * numOfBlockWrite);
+	void* singleBlock = malloc(BLOCK_SIZE);
+	for(int i = 0; i < numOfBlockWrite; i++){
+		block_read(startOFat + i, singleBlock);
+		memcpy(bufferStoreLargeBlock + BLOCK_SIZE * i, singleBlock, BLOCK_SIZE);
+	}
+	for(int i = 0; i < actualSize)
+
+}
+
 int fs_read(int fd, void *buf, size_t count)
 {
 		if(FdCheck(fd) == -1){
@@ -451,6 +536,7 @@ int fs_read(int fd, void *buf, size_t count)
 		}
 		char filename[FS_FILENAME_LEN];
 		strcpy(filename, fs->fdWithFileName[fd]);
+		uint64_t offsetOfFile = fs->fdWithOffset[fd];
 		const char *constFilename = filename;
 		int indexOfRootDirectory = FindFileLocation(constFilename);
 		if(fs->fdWithOffset[fd] > fs->RootDirectory[indexOfRootDirectory].sizeOfFile){
@@ -460,29 +546,50 @@ int fs_read(int fd, void *buf, size_t count)
 		// warning: error: comparison between signed and unsigned integer expressions
 		// orginal: if(count > numOfReadTimes * BLOCK_SIZE ){
 		size_t checkSize = numOfReadTimes * BLOCK_SIZE;
-		if(count > checkSize ){
+		if(count > checkSize){
 				numOfReadTimes += 1;
-				checkSize = numOfReadTimes * BLOCK_SIZE;
+				checkSize = (count - checkSize) + numOfReadTimes * BLOCK_SIZE;
 		}
 		int* indexOfBlock = (int*)malloc(sizeof(int));
 		int* indexInBlock = (int*)malloc(sizeof(int));
 		int remainSize = count;
 		int actualSize = 0;
 		void* partOfBuffer = malloc(BLOCK_SIZE);
+		void* bufferStoreLargeBlock = malloc(BLOCK_SIZE * numOfReadTimes);
 		int indexOfFat = fs->RootDirectory[indexOfRootDirectory].indexOfFirstBlock;
+		int startOffsetInBlock = 0;
+	
+		if(offsetOfFile != 0){
+			int fatOffsetPoint = offsetOfFile / BLOCK_SIZE;
+			indexOfFat = indexOfFat + fatOffsetPoint;
+			startOffsetInBlock = indexOfFat - (fatOffsetPoint * BLOCK_SIZE);
+		}
+
+		FindFatNextLocation(indexOfFat, indexOfBlock, indexInBlock);
 		for(int i = 0; i < numOfReadTimes; i++){
 				block_read(fs->superBlock->indexOfStartBlock + indexOfFat , partOfBuffer);
 				FindFatNextLocation(indexOfFat, indexOfBlock, indexInBlock);
 				indexOfFat = fs->fatBlocks[*indexOfBlock].fat[*indexInBlock];
 				if(remainSize > BLOCK_SIZE){
-						memcpy(buf + BLOCK_SIZE * i, partOfBuffer, BLOCK_SIZE);
+						memcpy(bufferStoreLargeBlock +  BLOCK_SIZE * i, partOfBuffer, BLOCK_SIZE);
 						actualSize += BLOCK_SIZE;
+						remainSize -= BLOCK_SIZE;
 				}else{
-						memcpy(buf + BLOCK_SIZE * i, partOfBuffer, remainSize);
+						memcpy(bufferStoreLargeBlock + BLOCK_SIZE * i, partOfBuffer, remainSize);
 						actualSize += remainSize;
+						remainSize -= remainSize;
 				}
-				remainSize -= BLOCK_SIZE;
+				if(indexOfFat == -1){
+					break;
+				}
+				
 		}
+		uint64_t endOffset = offsetOfFile + actualSize;
+		int endOffsetInBlock = endOffset % BLOCK_SIZE;
+		memcpy(buf, bufferStoreLargeBlock + startOffsetInBlock, actualSize);
+		fs->fdWithOffset[fd] = endOffset;
+
+
 		return actualSize;
 }
 
