@@ -5,7 +5,7 @@
 #include <string.h>
 
 #include "disk.h"
-//#include "disk.c"
+#include "disk.c"
 #include "fs.h"
 #define FAT_EOC 0xFFFF
 #define FS_NUM_FAT_ENTRIES 2048
@@ -467,7 +467,7 @@ int fs_write(int fd, void *buf, size_t count)
 				actualSizeInEachBlock[countOfBlock] = sizeOfDataInBlock;
 				countOfBlock += 1;
 				sizeOfDataInBlock = 0;
-			}else if ((startOffsetInBlock + i) % BLOCK_SIZE == 0){
+			}else if ((startOffsetInBlock + i) % BLOCK_SIZE == 0 && (startOffsetInBlock + i) != 0){
 				actualSizeInEachBlock[countOfBlock] = sizeOfDataInBlock;
 				countOfBlock += 1;
 				sizeOfDataInBlock = 0;
@@ -586,44 +586,3 @@ int fs_read(int fd, void *buf, size_t count)
 		fs->fdWithOffset[fd] = endOffset;
 		return actualSize;
 }
-
-/*
-#define ASSERT(cond, func)                               \
-do {                                                     \
-	if (!(cond)) {                                       \
-		fprintf(stderr, "Function '%s' failed\n", func); \
-		exit(EXIT_FAILURE);                              \
-	}                                                    \
-} while (0)
-
-int main(int argc, char *argv[])
-{
-	int ret;
-	char *diskname = "test.fs";
-	int fd;
-	char data[26] = "abcdefghijklmnopqrstuvwxyz";
-
-	ret = fs_mount(diskname);
-	ASSERT(!ret, "fs_mount");
-	fs_create("test");
-	fs_ls();
-	
-	fd = fs_open("sshell");
-	ASSERT(fd >= 0, "fs_open");
-
-	fs_lseek(fd, 2);
-	ret = fs_write(fd, data, sizeof(data));
-	fs_lseek(fd, 9);
-	void* buffer = malloc(26);
-	fs_read(fd, buffer, 26);
-	printf("%d", sizeof(buffer));
-	ASSERT(ret == sizeof(data), "fs_write");
-
-	
-	fs_close(fd);
-	fs_umount();
-
-	return 0;
-	
-}
-*/
