@@ -550,7 +550,7 @@ int fs_read(int fd, void *buf, size_t count)
 		}
 		int numOfReadTimes = (count + (int)offsetOfFile) / BLOCK_SIZE;
 		size_t checkSize = numOfReadTimes * BLOCK_SIZE;
-		if((count + (int)offsetOfFile) > checkSize > checkSize){
+		if((count + (int)offsetOfFile) > checkSize){
 				numOfReadTimes += 1;
 				checkSize = (count + (int)offsetOfFile - checkSize) + numOfReadTimes * BLOCK_SIZE;
 		}
