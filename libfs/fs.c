@@ -420,9 +420,9 @@ int fs_write(int fd, void *buf, size_t count)
 		//number of block need to read from disk
 		int numOfReadTimes = (count + (int)offsetOfFile) / BLOCK_SIZE;
 		size_t checkSize = numOfReadTimes * BLOCK_SIZE;
-		if(count > checkSize){
+		if((count + (int)offsetOfFile) > checkSize){
 				numOfReadTimes += 1;
-				checkSize = (count - checkSize) + numOfReadTimes * BLOCK_SIZE;
+				checkSize = (count + (int)offsetOfFile - checkSize) + numOfReadTimes * BLOCK_SIZE;
 		}
 
 		int* indexOfBlock = (int*)malloc(sizeof(int));
@@ -437,7 +437,7 @@ int fs_write(int fd, void *buf, size_t count)
 				int fatOffsetPoint = offsetOfFile / BLOCK_SIZE;
 				indexOfFat = indexOfFat + fatOffsetPoint;
 				startOffsetInBlock = offsetOfFile - (fatOffsetPoint * BLOCK_SIZE);
-				numOfReadTimes += 1;
+				//numOfReadTimes += 1;
 		}
 		void* partOfBuffer = malloc(BLOCK_SIZE);
 		void* bufferStoreLargeBlock = malloc(BLOCK_SIZE * numOfReadTimes);
@@ -522,6 +522,7 @@ int fs_write(int fd, void *buf, size_t count)
 		}
 		
 		fs->RootDirectory[indexOfRootDirectory].sizeOfFile += actualSize;
+		fs->fdWithOffset[fd]  += actualSize;
 		free(bufferStoreLargeBlock);
 		free(partOfBuffer);
 		return actualSize;
@@ -549,9 +550,9 @@ int fs_read(int fd, void *buf, size_t count)
 		}
 		int numOfReadTimes = (count + (int)offsetOfFile) / BLOCK_SIZE;
 		size_t checkSize = numOfReadTimes * BLOCK_SIZE;
-		if(count > checkSize){
+		if((count + (int)offsetOfFile) > checkSize > checkSize){
 				numOfReadTimes += 1;
-				checkSize = (count - checkSize) + numOfReadTimes * BLOCK_SIZE;
+				checkSize = (count + (int)offsetOfFile - checkSize) + numOfReadTimes * BLOCK_SIZE;
 		}
 		int* indexOfBlock = (int*)malloc(sizeof(int));
 		int* indexInBlock = (int*)malloc(sizeof(int));
